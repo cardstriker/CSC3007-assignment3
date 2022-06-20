@@ -6,38 +6,118 @@
 </head>
 <body>
     <h1>Population of SG 2021</h1>
-<svg></svg>
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script>
-let width = 1000, height = 600;
 
-let svg = d3.select("svg")
-    .attr("viewBox", "0 0 " + width + " " + height)
+    
+    <div id="content"><svg></svg></div>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        let width = 1000, height = 600;
 
-// Load external data
-Promise.all([d3.json("sgmap.json"), d3.csv("population2021.csv")]).then(data => {
+        let svg = d3.select("svg")
+        .attr("viewBox", "0 0 " + width + " " + height)
 
-console.log(data[0]);
-console.log(data[1]);
 
-// Map and projection
-var projection = d3.geoMercator()
-    .center([103.851959, 1.290270])
-    .fitExtent([[20, 20], [980, 580]], data[0]);
 
-let geopath = d3.geoPath().projection(projection);
 
-svg.append("g")
-    .attr("id", "districts")
-    .selectAll("path")
-    .data(data[0].features)
-    .enter()
-    .append("path")
-    .attr("d", geopath)
-    .attr("fill", "black");
-})
+        // Load external data
+        Promise.all([d3.json("sgmap.json"), d3.csv("population2021.csv")]).then(data => {
+            console.log(data[0].features);
+            console.log(data[1]);
 
-</script>
+            var populationData = {}
+            for (let i = 0; i < data[1].length; i++) {
+              populationData[data[1][i].Subzone.toUpperCase()] = data[1][i].Population
+            }
+
+            var populationColor = ['#3c4eff', '#863cee', '#b020da', '#cd00c4', '#e300ad', '#f10095', '#fb007d', '#ff0067', '#ff0051', '#fc243d']
+            var populationDomain = [0, 8000, 16000, 24000, 32000, 40000, 48000, 56000, 64000]
+
+            var threshold = d3.scaleThreshold()
+            // Setting domain and range for the scale
+            .domain(populationDomain)
+            .range(populationColor);
+
+
+            // Map and projection
+            var projection = d3.geoMercator()
+            .center([103.851959, 1.290270])
+            .fitExtent([[20, 20], [980, 580]], data[0]);
+
+            let geopath = d3.geoPath().projection(projection);
+
+            svg.append("path")
+            .datum({type: "Sphere"})
+            .attr("id", "ocean")
+            .attr("d", geopath)
+            .attr("fill", "lightgray");
+
+            const tooltip = d3.select("#content")
+            .append("div")
+            .attr("class", "valueTooltip")
+            .style("position", "absolute")
+            .style("z-index", "10")
+            .style("visibility", "hidden")
+            .style("padding", "15px")
+            .style("background", "gray")
+            .style("border-radius", "5px")
+            .style("color", "white");
+
+            svg.append("g")
+            .attr("id", "districts")
+            .selectAll("path")
+            .data(data[0].features)
+            .enter()
+            .append("path")
+            .attr("d", geopath)
+            .attr("fill", function (d) {
+                return threshold(populationData[d.properties["Name"]])
+            })
+            .style("stroke", "blue")
+            .attr("stroke-width", "1px")
+            .on('mouseover', function (event, d) {
+                tooltip
+                .html(d.properties["Name"] + " : " + populationData[d.properties["Name"]])
+                .style("visibility", "visible");   
+
+                d3.select(this).transition()
+                .attr('opacity', '.50');            
+            })
+            .on("mousemove", function (event) {
+                tooltip
+                .style("top", event.pageY - 10 + "px")
+                .style("left", event.pageX + 10 + "px");
+            })
+            .on('mouseout', function (event) {
+                tooltip
+                .html("")
+                .style("visibility", "hidden"); 
+
+                d3.select(this).transition()
+                .attr('opacity', '1');   
+            });
+
+            svg.selectAll("mydots")
+              .data(populationDomain)
+              .enter()
+              .append("circle")
+                .attr("cx", width - 100)
+                .attr("cy", function(d,i){ return 345 + i*25}) // 100 is where the first dot appears. 25 is the distance between dots
+                .attr("r", 7)
+                .style("fill", function(d){ return threshold(d)})
+
+            // Add one dot in the legend for each name.
+            svg.selectAll("mylabels")
+              .data(populationDomain)
+              .enter()
+              .append("text")
+                .attr("x", width - 80)
+                .attr("y", function(d,i){ return 350 + i*25}) // 100 is where the first dot appears. 25 is the distance between dots
+                .style("fill", function(d){ return threshold(d)})
+                .text(function(d){ return d})
+                .attr("text-anchor", "left")
+    .style("alignment-baseline", "middle")
+        });
+    </script>
 
 </body>
 </html>
