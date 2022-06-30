@@ -32,8 +32,8 @@
               populationData[data[1][i].Subzone.toUpperCase()] = data[1][i].Population
             }
 
-            var populationColor = ['#3c4eff', '#863cee', '#b020da', '#cd00c4', '#e300ad', '#f10095', '#fb007d', '#ff0067', '#ff0051', '#fc243d']
-            var populationDomain = [0, 8000, 16000, 24000, 32000, 40000, 48000, 56000, 64000]
+            var populationColor = ['#863cee', '#b020da', '#cd00c4', '#e300ad', '#f10095', '#fb007d', '#ff0067', '#ff0051', '#fc243d']
+            var populationDomain = [8000, 16000, 24000, 32000, 40000, 48000, 56000, 64000]
 
             var threshold = d3.scaleThreshold()
             // Setting domain and range for the scale
@@ -73,6 +73,9 @@
             .append("path")
             .attr("d", geopath)
             .attr("fill", function (d) {
+                if (populationData[d.properties["Name"]] == '-'){
+                    return "gray"
+                }
                 return threshold(populationData[d.properties["Name"]])
             })
             .style("stroke", "blue")
@@ -104,7 +107,7 @@
               .enter()
               .append("circle")
                 .attr("cx", width - 100)
-                .attr("cy", function(d,i){ return 345 + i*25}) // 100 is where the first dot appears. 25 is the distance between dots
+                .attr("cy", function(d,i){ return 345 + i*25})
                 .attr("r", 7)
                 .style("fill", function(d){ return threshold(d)})
 
@@ -114,7 +117,7 @@
               .enter()
               .append("text")
                 .attr("x", width - 80)
-                .attr("y", function(d,i){ return 350 + i*25}) // 100 is where the first dot appears. 25 is the distance between dots
+                .attr("y", function(d,i){ return 350 + i*25})
                 .style("fill", function(d){ return threshold(d)})
                 .text(function(d){ return d})
                 .attr("text-anchor", "left")
